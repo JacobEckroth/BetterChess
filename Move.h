@@ -8,4 +8,6 @@ struct Move {
 	bool kingSideCastle;
 	bool queenSideCastle;
 	bool enPassant;
+	bool isPromotion;
+	char promotionType;
 };

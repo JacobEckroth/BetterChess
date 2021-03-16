@@ -1,6 +1,13 @@
 #include "BoardState.h"
 #include "Board.h"
 
+BoardState::~BoardState() {
+	for (int x = 0; x < Board::boardXBoxes; x++) {
+		delete[] board[x];
+	}
+	delete[] board;
+}
+
 unsigned int** BoardState::getBoard() {
 	return board;
 }
@@ -98,7 +105,12 @@ BoardState* BoardState::copyBoardState(BoardState* currentBoardState) {
 			(newState->board)[x][y] = (currentBoardState->board)[x][y];
 		}
 	}
+	newState->depth = currentBoardState->depth + 1;
 	return newState;
+}
+
+int BoardState::getDepth() {
+	return depth;
 }
 
 

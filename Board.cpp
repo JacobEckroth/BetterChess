@@ -8,13 +8,35 @@
 #include <stdlib.h>
 #include <ctype.h>
 #define HIGHLIGHT_COLOR {0,255,0,100}
+#define ATTACK_COLOR {255,0,0,100}
+#define WIN_COLOR {255,215,0,200}
 #define AMOUNT_OF_BOX .8
 #define STARTING_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+#define TEST_FEN "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - -	"
 int Board::boxXWidth;
 int Board::boxYHeight;
 int Board::boardXBoxes;
 int Board::boardYBoxes;
 
+void Board::reset() {
+	for (int x = 0; x < boardXBoxes; ++x) {
+		for (int y = 0; y < boardYBoxes; ++y) {
+
+			boardState->getBoard()[x][y] = 0;
+		}
+	}
+	draggingPiece = false;
+	draggingPieceX = -1;
+	draggingPieceY = -1;
+	loadBoardFromFen(TEST_FEN, boardState);
+
+	legalMoves = calculateLegalMoves(boardState);
+
+	highlightKingBox.x = -1;
+	highlightKingBox.y = -1;
+	winnerKing.x = winnerKing.y = -1;
+	gameOver = false;
+}
 
 void Board::init() {
 	Piece::init();
@@ -45,9 +67,13 @@ void Board::init() {
 	draggingPieceY = -1;
 	loadBoardFromFen(STARTING_FEN, boardState);
 
-	calculateLegalMoves(boardState);
+	legalMoves = calculateLegalMoves(boardState);
 	
-	printBoardState(boardState);
+
+	highlightKingBox.x = -1;
+	highlightKingBox.y = -1;
+	winnerKing.x = winnerKing.y = -1;
+	gameOver = false;
 
 
 }
@@ -55,11 +81,7 @@ void Board::init() {
 Board::~Board() {
 	Piece::destroyImages();
 
-	unsigned int** board = boardState->getBoard();
-	for (int x = 0; x < boardXBoxes; x++) {
-		delete(board[x]);
-	}
-	delete(board);
+	
 	delete(boardState);
 }
 
@@ -68,11 +90,86 @@ void Board::render(BoardState* currentBoardState) {
 	if (draggingPiece) {
 		renderHighlightMoves();
 	}
+	if (highlightKingBox.x != -1 || winnerKing.x != -1) {
+		renderKingBox();
+	}
 	renderPieces(currentBoardState);
 	if (draggingPiece) {
 		renderDraggedPiece();
 	}
+	if (waitingForPromotionChoice) {
+		renderPromotionOptions();
+	}
 
+}
+
+void Board::renderPromotionOptions() {
+	SDL_Rect renderRect;
+	renderRect.w = boxXWidth * 2;
+	renderRect.h = boxYHeight * 2;
+	renderRect.x = Game::boardTopLeftX;
+	renderRect.y = Game::boardTopLeftY + (getHeight() - renderRect.h) / 2;
+	int w, h;
+	SDL_Rect fromRect;
+	fromRect.x = fromRect.y = 0;
+	if (boardState->getCurrentTurn() == 'w') {
+		SDL_QueryTexture(Piece::whiteQueenTexture, NULL, NULL, &w, &h);
+		fromRect.w = w;
+		fromRect.h = h;
+		SDL_RenderCopy(Window::renderer, Piece::whiteQueenTexture, &fromRect, &renderRect);
+		renderRect.x += renderRect.w;
+
+		SDL_QueryTexture(Piece::whiteRookTexture, NULL, NULL, &w, &h);
+		fromRect.w = w;
+		fromRect.h = h;
+		SDL_RenderCopy(Window::renderer,Piece::whiteRookTexture, &fromRect, &renderRect);
+		renderRect.x += renderRect.w;
+
+		SDL_QueryTexture(Piece::whiteBishopTexture , NULL, NULL, &w, &h);
+		fromRect.w = w;
+		fromRect.h = h;
+		SDL_RenderCopy(Window::renderer, Piece::whiteBishopTexture, &fromRect, &renderRect);
+		renderRect.x += renderRect.w;
+
+		SDL_QueryTexture(Piece::whiteKnightTexture, NULL, NULL, &w, &h);
+		fromRect.w = w;
+		fromRect.h = h;
+		SDL_RenderCopy(Window::renderer, Piece::whiteKnightTexture , &fromRect, &renderRect);
+
+
+	}
+	else {
+		SDL_QueryTexture(Piece::blackQueenTexture, NULL, NULL, &w, &h);
+		fromRect.w = w;
+		fromRect.h = h;
+		SDL_RenderCopy(Window::renderer, Piece::blackQueenTexture, &fromRect, &renderRect);
+		renderRect.x += renderRect.w;
+
+		SDL_QueryTexture(Piece::blackRookTexture, NULL, NULL, &w, &h);
+		fromRect.w = w;
+		fromRect.h = h;
+		SDL_RenderCopy(Window::renderer, Piece::blackRookTexture, &fromRect, &renderRect);
+		renderRect.x += renderRect.w;
+
+		SDL_QueryTexture(Piece::blackBishopTexture, NULL, NULL, &w, &h);
+		fromRect.w = w;
+		fromRect.h = h;
+		SDL_RenderCopy(Window::renderer, Piece::blackBishopTexture, &fromRect, &renderRect);
+		renderRect.x += renderRect.w;
+
+		SDL_QueryTexture(Piece::blackKnightTexture, NULL, NULL, &w, &h);
+		fromRect.w = w;
+		fromRect.h = h;
+		SDL_RenderCopy(Window::renderer, Piece::blackKnightTexture, &fromRect, &renderRect);
+
+	}
+
+
+}
+
+void Board::togglePromotionOptions() {
+	std::cout << "toggling" << std::endl;
+	waitingForPromotionChoice = !waitingForPromotionChoice;
 }
 
 
@@ -271,11 +368,13 @@ void Board::loadBoardFromFen(const char* fenNotation, BoardState* currentBoardSt
 		column = 0;
 		while (fenNotation[index] != '/' && fenNotation[index] != ' ') {
 			if (isdigit(fenNotation[index])) {
-				index++;
+			
+
 				column += (fenNotation[index] - '0');
+				index++;
 			}
 			else {
-
+				
 				switch (fenNotation[index]) {
 				case 'P':
 					board[column][rank] = Piece::white | Piece::pawn;
@@ -389,11 +488,16 @@ void Board::handleMouseButtonDown(SDL_MouseButtonEvent& b, BoardState* currentBo
 		else {
 			boardX = (x - Game::boardTopLeftX) / boxXWidth;
 			boardY = (y - Game::boardTopLeftY) / boxYHeight;
-			if (!draggingPiece) {
-				attemptPickupPiece(boardX, boardY, currentBoardState);
+			if (waitingForPromotionChoice) {
+				tryPickingPromotionPiece(boardX, boardY,currentBoardState);
 			}
 			else {
-				attemptPlacePiece(boardX, boardY, currentBoardState);
+				if (!draggingPiece) {
+					attemptPickupPiece(boardX, boardY, currentBoardState);
+				}
+				else {
+					attemptPlacePiece(boardX, boardY, currentBoardState);
+				}
 			}
 		}
 
@@ -402,6 +506,53 @@ void Board::handleMouseButtonDown(SDL_MouseButtonEvent& b, BoardState* currentBo
 		stopDraggingPiece();
 	}
 }
+
+
+void Board::tryPickingPromotionPiece(int x, int y, BoardState* currentBoardState) {
+	if (y == 3 || y == 4) {
+		switch (x / 2) {
+		case 0:
+			promoteQueen(currentBoardState);
+			break;
+		case 1:
+			promoteRook(currentBoardState);
+			break;
+		case 2:
+			promoteBishop(currentBoardState);
+			break;
+	
+		case 3:
+			promoteKnight(currentBoardState);
+			break;
+		}
+		waitingForPromotionChoice = false;
+		nextTurn(currentBoardState);
+
+	}
+}
+
+void Board::promoteQueen(BoardState* currentBoardState) {
+	makeMove({promotionMove.fromX,promotionMove.fromY,
+		promotionMove.toX,promotionMove.toY,
+		false,false,false,true,'q'}, currentBoardState);
+
+}
+void Board::promoteRook(BoardState* currentBoardState) {
+	makeMove({ promotionMove.fromX,promotionMove.fromY,
+		promotionMove.toX,promotionMove.toY,
+		false,false,false,true,'r' }, currentBoardState);
+}
+void Board::promoteKnight(BoardState* currentBoardState) {
+	makeMove({ promotionMove.fromX,promotionMove.fromY,
+		promotionMove.toX,promotionMove.toY,
+		false,false,false,true,'n' }, currentBoardState);
+}
+void Board::promoteBishop(BoardState* currentBoardState) {
+	makeMove({ promotionMove.fromX,promotionMove.fromY,
+		promotionMove.toX,promotionMove.toY,
+		false,false,false,true,'b' }, currentBoardState);
+}
+
 
 void Board::attemptPickupPiece(int x, int y, BoardState* currentBoardState) {
 
@@ -421,17 +572,36 @@ void Board::attemptPickupPiece(int x, int y, BoardState* currentBoardState) {
 }
 
 void Board::attemptPlacePiece(int x, int y, BoardState* currentBoardState) {
+	
+	
 	Move newMove = { draggingPieceX,draggingPieceY,x,y };
 	unsigned int** board = currentBoardState->getBoard();
 	int enPassantX = currentBoardState->getEnPassantX();
 	int enPassantY = currentBoardState->getEnPassantY();
+
 	//inLegalMoves passes in a reference so we update the castling and sturff here.
 	if (inLegalMoves(newMove)) {
-		
-		makeMove(newMove, currentBoardState);
-		switchTurns(currentBoardState);
+		if (newMove.isPromotion) {
+			promotionMove = {
+				newMove.fromX,
+				newMove.fromY,
+				newMove.toX,
+				newMove.toY,
+				false,
+				false,
+				false,
+				true,
+				newMove.promotionType
+			};
+			
+			waitingForPromotionChoice = true;
+		}
+		else {
+			
+			makeMove(newMove, currentBoardState);
+			nextTurn(currentBoardState);
+		}
 		stopDraggingPiece();
-		calculateLegalMoves(currentBoardState);
 		
 	}
 	else {
@@ -439,6 +609,20 @@ void Board::attemptPlacePiece(int x, int y, BoardState* currentBoardState) {
 	}
 
 }
+
+void Board::nextTurn(BoardState* currentBoardState) {
+	switchTurns(currentBoardState);
+
+	legalMoves = calculateLegalMoves(currentBoardState);
+
+	if (isGameOver(currentBoardState) == 1) {
+		gameOver = true;
+
+	}
+
+	updateHighlightKingBox();
+}
+
 void Board::switchTurns(BoardState* currentBoardState) {
 	currentBoardState->setCurrentTurn((currentBoardState->getCurrentTurn() == 'w') ? 'b' : 'w');
 
@@ -457,12 +641,15 @@ bool Board::inLegalMoves(struct Move& newMove) {
 			newMove.kingSideCastle = legalMoves.at(i).kingSideCastle;
 			newMove.queenSideCastle = legalMoves.at(i).queenSideCastle;
 			newMove.enPassant = legalMoves.at(i).enPassant;
+			newMove.isPromotion = legalMoves.at(i).isPromotion;
+			newMove.promotionType = legalMoves.at(i).promotionType;
 			
 			return true;
 		}
 	}
 	return false;
 }
+
 bool Board::inPseudoMoves(struct Move& newMove) {
 	
 	for (int i = 0; i < pseudoLegalMoves.size(); i++) {
@@ -475,6 +662,8 @@ bool Board::inPseudoMoves(struct Move& newMove) {
 			newMove.kingSideCastle = pseudoLegalMoves.at(i).kingSideCastle;
 			newMove.queenSideCastle = pseudoLegalMoves.at(i).queenSideCastle;
 			newMove.enPassant = pseudoLegalMoves.at(i).enPassant;
+			newMove.isPromotion = pseudoLegalMoves.at(i).isPromotion;
+			newMove.promotionType = pseudoLegalMoves.at(i).promotionType;
 			
 			return true;
 		}
@@ -510,31 +699,72 @@ std::vector<Move> Board::calculatePseudoLegalMoves(BoardState* currentBoardState
 	return returnVec;
 }
 
-void Board::calculateLegalMoves(BoardState* currentBoardState) {
-	legalMoves.clear();
+std::vector<Move> Board::calculateLegalMoves(BoardState* currentBoardState) {
+	std::vector<Move> currentLegal;
 	//std::cout << "Calling this once" << std::endl;
 	
 	BoardState* newBoardState;
 	pseudoLegalMoves = calculatePseudoLegalMoves(currentBoardState);
 	for (int i = 0; i < pseudoLegalMoves.size(); i++) {
 		
-		newBoardState = BoardState::copyBoardState(currentBoardState);
 		
+		
+		//the king can't castle if it's in check
+		if (kingInCheck(currentBoardState)) {
+			if (pseudoLegalMoves.at(i).kingSideCastle) {
+				continue;
+			}
+			else if (pseudoLegalMoves.at(i).queenSideCastle) {
+				continue;
+			}
+		}
+		//the king can't castle through check.
+		if (pseudoLegalMoves.at(i).kingSideCastle || pseudoLegalMoves.at(i).queenSideCastle) {
+			if (squareAttacked((pseudoLegalMoves.at(i).fromX + pseudoLegalMoves.at(i).toX) / 2, pseudoLegalMoves.at(i).fromY,currentBoardState)) {
+				continue;
+			}
+		}
+		//there must be clear spaces between the rook and king to be able to castle.
+		bool inValid = false;
+		if (pseudoLegalMoves.at(i).kingSideCastle) {
+			for (int x = pseudoLegalMoves.at(i).fromX + 1; x < boardXBoxes - 1; x++) {
+				if (currentBoardState->getBoard()[x][pseudoLegalMoves.at(i).fromY] != 0) {
+					inValid = true;
+					break;
+				}
+			}
+		}
+		else if (pseudoLegalMoves.at(i).queenSideCastle) {
+			for (int x =1; x < pseudoLegalMoves.at(i).fromX; x++) {
+				if (currentBoardState->getBoard()[x][pseudoLegalMoves.at(i).fromY] != 0) {
+					inValid = true;
+					break;
+				}
+			}
+		}
+		if (inValid) {
+			continue;
+		}
+		newBoardState = BoardState::copyBoardState(currentBoardState);
+
+
 		makeMove(pseudoLegalMoves.at(i), newBoardState);
 		
-	
+			
 		if (!kingInCheck(newBoardState)) {
 	
 			//because kingInCheck changed the vector... but it's not working
 			
 		
-			legalMoves.push_back({ pseudoLegalMoves.at(i).fromX,
+			currentLegal.push_back({ pseudoLegalMoves.at(i).fromX,
 				pseudoLegalMoves.at(i).fromY,
 				pseudoLegalMoves.at(i).toX,
 				pseudoLegalMoves.at(i).toY,
 				pseudoLegalMoves.at(i).kingSideCastle,
 				pseudoLegalMoves.at(i).queenSideCastle,
-				pseudoLegalMoves.at(i).enPassant }
+				pseudoLegalMoves.at(i).enPassant,
+				pseudoLegalMoves.at(i).isPromotion,
+				pseudoLegalMoves.at(i).promotionType}
 				);
 			
 		}
@@ -542,6 +772,7 @@ void Board::calculateLegalMoves(BoardState* currentBoardState) {
 		delete(newBoardState);
 		
 	}
+	return currentLegal;
 }
 
 void Board::makeMove(struct Move move, BoardState* currentBoardState) {
@@ -549,32 +780,76 @@ void Board::makeMove(struct Move move, BoardState* currentBoardState) {
 	unsigned int** board = currentBoardState->getBoard();
 	int enPassantX = currentBoardState->getEnPassantX();
 	int enPassantY = currentBoardState->getEnPassantY();
-
-	if (isEnPassant(move.fromX, move.fromY, move.toX, move.fromX, currentBoardState)) {
+	if (isEnPassant(move.fromX, move.fromY, move.toX, move.toY, currentBoardState)) {
+		
 		//the piece removed depends on the turn.
 		if (currentBoardState->getCurrentTurn() == 'w') {
 			board[enPassantX][enPassantY + 1] = 0;
 		}
 		else {
 			board[enPassantX][enPassantY - 1] = 0;
+			
 		}
 
 	}
+	
 	if (move.kingSideCastle) {
-		std::cout << "Kingside Castle" << std::endl;
+	
 		board[move.toX - 1][move.toY] = board[move.toX + 1][move.toY];
 		board[move.toX + 1][move.toY] = 0;
 	}
 	else if (move.queenSideCastle) {
-		std::cout << "Queenside Castle" << std::endl;
+	
 		board[move.toX + 1][move.toY] = board[move.toX - 2][move.toY];
 		board[move.toX - 2][move.toY] = 0;
 	}
 
 	updateEnPassant(move.fromX, move.fromY, move.toX, move.toY, currentBoardState);
 	updateCastling(move.fromX, move.fromY, move.toX, move.toY, currentBoardState);
-	board[move.toX][move.toY] = board[move.fromX][move.fromY];
+	char turn = currentBoardState->getCurrentTurn();
+	if (move.isPromotion) {
+		switch (move.promotionType) {
+		case 'q':
+			if (turn == 'w') {
+				board[move.toX][move.toY] = Piece::white | Piece::queen;
+			}
+			else {
+				board[move.toX][move.toY] = Piece::black | Piece::queen;
+			}
+			break;
+		case 'r':
+			if (turn == 'w') {
+				board[move.toX][move.toY] = Piece::white | Piece::rook;
+			}
+			else {
+				board[move.toX][move.toY] = Piece::black | Piece::rook;
+			}
+			break;
+		case 'n':
+			if (turn == 'w') {
+				board[move.toX][move.toY] = Piece::white | Piece::knight;
+			}
+			else {
+				board[move.toX][move.toY] = Piece::black | Piece::knight;
+			}
+			break;
+
+		case 'b':
+			if (turn == 'w') {
+				board[move.toX][move.toY] = Piece::white | Piece::bishop;
+			}
+			else {
+				board[move.toX][move.toY] = Piece::black | Piece::bishop;
+			}
+			break;
+		}
+	}
+	else {
+		board[move.toX][move.toY] = board[move.fromX][move.fromY];
+	}
+	
 	board[move.fromX][move.fromY] = 0;
+
 
 }
 
@@ -936,12 +1211,22 @@ void Board::calculatePawnMoves(int x, int y, BoardState* currentBoardState, std:
 		if (y - 1 >= 0) {
 			//pawns cant take vertically.
 			if (board[x][y - 1] == 0) {
-				currentPseudo.push_back({ x,y,x,y - 1 });
+				//if it's a promotion
+				if (y - 1 == 0) {
+					currentPseudo.push_back({ x,y,x,y - 1,false,false,false,true,'q' });
+					currentPseudo.push_back({ x,y,x,y - 1,false,false,false,true,'r' });
+					currentPseudo.push_back({ x,y,x,y - 1,false,false,false,true,'n' });
+					currentPseudo.push_back({ x,y,x,y - 1,false,false,false,true,'b' });
+				}
+				else {
+					currentPseudo.push_back({ x,y,x,y - 1,false,false,false,false,' '});
+				}
+				
 				//we only can move forward 2 if the space is open as well.
 				if (y == boardYBoxes - 2) {	//if it's in the starting position.
 					if (y - 2 >= 0) {	//this shouldn't be necessary except for tiny boards
 						if (board[x][y - 2] == 0) {
-							currentPseudo.push_back({x,y,x,y - 2, false, false, false });
+							currentPseudo.push_back({x,y,x,y - 2, false, false, false,false,' ' });
 						}
 					}
 				}
@@ -953,7 +1238,16 @@ void Board::calculatePawnMoves(int x, int y, BoardState* currentBoardState, std:
 			//if we're not at the edge of the board
 			if (x - 1 >= 0) {
 				if (board[x - 1][y - 1] != 0 && !pieceIsCurrentPlayersPiece(x - 1, y - 1, currentBoardState)) {
-					currentPseudo.push_back({ x,y,x - 1,y - 1, false, false, false });
+					if (y - 1 == 0) {
+						currentPseudo.push_back({ x,y,x - 1,y - 1, false, false, false,true,'q' });
+						currentPseudo.push_back({ x,y,x - 1,y - 1, false, false, false,true,'r' });
+						currentPseudo.push_back({ x,y,x - 1,y - 1, false, false, false,true,'n' });
+						currentPseudo.push_back({ x,y,x - 1,y - 1, false, false, false,true,'b' });
+					}
+					else {
+						currentPseudo.push_back({ x,y,x - 1,y - 1, false, false, false,false,' ' });
+					}
+					
 				}
 				//en passant
 				else if (x - 1 == currentBoardState->getEnPassantX() && y - 1 == currentBoardState->getEnPassantY()) {
@@ -962,11 +1256,20 @@ void Board::calculatePawnMoves(int x, int y, BoardState* currentBoardState, std:
 			}
 			if (x + 1 < boardXBoxes) {
 				if (board[x + 1][y - 1] != 0 && !pieceIsCurrentPlayersPiece(x + 1, y - 1, currentBoardState)) {
-					currentPseudo.push_back({ x,y,x + 1,y - 1, false, false, false });
+					if (y - 1 == 0) {
+						currentPseudo.push_back({ x,y,x + 1,y - 1, false, false, false,true,'q' });
+						currentPseudo.push_back({ x,y,x + 1,y - 1, false, false, false,true,'r' });
+						currentPseudo.push_back({ x,y,x + 1,y - 1, false, false, false,true,'n' });
+						currentPseudo.push_back({ x,y,x + 1,y - 1, false, false, false,true,'b' });
+					}
+					else {
+						currentPseudo.push_back({ x,y,x + 1,y - 1, false, false, false,false,' ' });
+					}
+					
 				}
 				//en passant
 				else if (x + 1 == currentBoardState->getEnPassantX() && y - 1 == currentBoardState->getEnPassantY()) {
-					currentPseudo.push_back({ x,y,x + 1,y - 1,false,false,true });
+					currentPseudo.push_back({ x,y,x + 1,y - 1,false,false,true,false,' ' });
 				}
 			}
 		}
@@ -980,7 +1283,16 @@ void Board::calculatePawnMoves(int x, int y, BoardState* currentBoardState, std:
 		if (y + 1 < boardYBoxes) {
 			//pawns cant take vertically.
 			if (board[x][y + 1] == 0) {
-				currentPseudo.push_back({ x,y,x,y + 1 });
+				if (y + 1 == boardYBoxes - 1) {
+					currentPseudo.push_back({ x,y,x,y + 1 ,false,false,false,true,'r' });
+					currentPseudo.push_back({ x,y,x,y + 1 ,false,false,false,true,'n' });
+					currentPseudo.push_back({ x,y,x,y + 1 ,false,false,false,true,'b' });
+					currentPseudo.push_back({ x,y,x,y + 1 ,false,false,false,true,'q' });
+				}
+				else {
+					currentPseudo.push_back({ x,y,x,y + 1 ,false,false,false,false,' ' });
+				}
+			
 				//we only can move forward 2 if the space is open as well.
 				if (y == 1) {	//if it's in the starting position.
 					if (y + 2 < boardYBoxes) {	//this shouldn't be necessary except for tiny boards
@@ -997,7 +1309,16 @@ void Board::calculatePawnMoves(int x, int y, BoardState* currentBoardState, std:
 			//if we're not at the edge of the board
 			if (x - 1 >= 0) {
 				if (board[x - 1][y + 1] != 0 && !pieceIsCurrentPlayersPiece(x - 1, y + 1, currentBoardState)) {
-					currentPseudo.push_back({ x,y,x - 1,y + 1, false, false, false });
+					//promotion time
+					if (y + 1 == boardYBoxes - 1) {
+						currentPseudo.push_back({ x,y,x-1,y + 1 ,false,false,false,true,'q' });
+						currentPseudo.push_back({ x,y,x - 1,y + 1 ,false,false,false,true,'r' });
+						currentPseudo.push_back({ x,y,x - 1,y + 1 ,false,false,false,true,'b' });
+						currentPseudo.push_back({ x,y,x - 1,y + 1 ,false,false,false,true,'n' });
+					}
+					else {
+						currentPseudo.push_back({ x,y,x-1,y + 1 ,false,false,false,false,' ' });
+					}
 				}
 				else if (x - 1 == currentBoardState->getEnPassantX() && y + 1 == currentBoardState->getEnPassantY()) {
 					currentPseudo.push_back({ x,y,x - 1,y + 1,false,false,true });
@@ -1005,7 +1326,16 @@ void Board::calculatePawnMoves(int x, int y, BoardState* currentBoardState, std:
 			}
 			if (x + 1 < boardXBoxes) {
 				if (board[x + 1][y + 1] != 0 && !pieceIsCurrentPlayersPiece(x + 1, y + 1, currentBoardState)) {
-					currentPseudo.push_back({ x,y,x + 1,y + 1, false, false, false });
+					
+					if (y + 1 == boardYBoxes - 1) {
+						currentPseudo.push_back({ x,y,x + 1,y + 1 ,false,false,false,true,'r' });
+						currentPseudo.push_back({ x,y,x + 1,y + 1 ,false,false,false,true,'q' });
+						currentPseudo.push_back({ x,y,x + 1,y + 1 ,false,false,false,true,'b' });
+						currentPseudo.push_back({ x,y,x + 1,y + 1 ,false,false,false,true,'n' });
+					}
+					else {
+						currentPseudo.push_back({ x,y,x + 1,y + 1 ,false,false,false,false,' ' });
+					}
 				}
 				else if (x + 1 == currentBoardState->getEnPassantX() && y + 1 == currentBoardState->getEnPassantY()) {
 					currentPseudo.push_back({ x,y,x + 1,y + 1,false,false,true });
@@ -1050,22 +1380,25 @@ void Board::createHighlightMoves(int x, int y) {
 
 
 void Board::updateEnPassant(int fromX, int fromY, int toX, int toY, BoardState* currentBoardState) {
-
-	if ((boardState->getBoard()[fromX][fromY] & Piece::pawn) == Piece::pawn) {
+	
+	if ((currentBoardState->getBoard()[fromX][fromY] & Piece::pawn) == Piece::pawn) {
+	
 		if (abs(fromY - toY) == 2) {
-			boardState->setEnPassantX(fromX);
-			boardState->setEnPassantY((fromY + toY) / 2);
+			
+			currentBoardState->setEnPassantX(fromX);
+			currentBoardState->setEnPassantY((fromY + toY) / 2);
 
 		}
 		else {
-			boardState->setEnPassantX(-1);
-			boardState->setEnPassantY(-1);
+			currentBoardState->setEnPassantX(-1);
+			currentBoardState->setEnPassantY(-1);
 
 		}
 	}
 	else {
-		boardState->setEnPassantX(-1);
-		boardState->setEnPassantY(-1);
+		currentBoardState->setEnPassantX(-1);
+		currentBoardState->setEnPassantY(-1);
+		currentBoardState->setEnPassantY(-1);
 	}
 }
 
@@ -1106,6 +1439,38 @@ bool Board::isEnPassant(int fromX, int fromY, int toX, int toY, BoardState* curr
 
 bool Board::squareAttacked(int x, int y, BoardState* currentBoardState) {
 	BoardState* newBoardState = BoardState::copyBoardState(currentBoardState);
+
+	//pawns attack differently than they move.
+	if (newBoardState->getCurrentTurn() == 'b') {
+		if (y + 1 < boardYBoxes) {
+			if (x - 1 >= 0) {
+				if ((newBoardState->getBoard()[x - 1][y + 1]) == (Piece::pawn | Piece::white)) {
+					return true;
+				}
+			}
+			if (x + 1 < boardXBoxes) {
+				if (newBoardState->getBoard()[x + 1][y + 1]  == (Piece::pawn | Piece::white)) {
+					return true;
+				}
+			}
+		}
+	}
+	else {
+		if (y - 1 >= 0) {
+			if (x - 1 >= 0) {
+				if (newBoardState->getBoard()[x - 1][y - 1] == (Piece::pawn | Piece::black)) {
+					return true;
+				}
+			}
+			if (x + 1 < boardXBoxes) {
+				if (newBoardState->getBoard()[x + 1][y - 1] == (Piece::pawn | Piece::black)) {
+					return true;
+				}
+			}
+		}
+	}
+
+
 	switchTurns(newBoardState);
 
 	std::vector<Move> currentPseudo = calculatePseudoLegalMoves(newBoardState);
@@ -1116,6 +1481,9 @@ bool Board::squareAttacked(int x, int y, BoardState* currentBoardState) {
 
 		}
 	}
+
+	
+
 	delete(newBoardState);
 	return false;
 }
@@ -1131,4 +1499,106 @@ bool Board::kingInCheck(BoardState* currentBoardState) {
 	
 	return result;
 
+}
+
+
+void Board::updateHighlightKingBox() {
+	//optimize this later, probably fine though.
+	if (kingInCheck(boardState)) {
+		
+		findKingLocation(&highlightKingBox.x, &highlightKingBox.y, boardState);
+	}
+	else {
+		highlightKingBox.x = highlightKingBox.y = -1;
+	}
+	if (gameOver) {
+		BoardState* newBoardState = BoardState::copyBoardState(boardState);
+		switchTurns(newBoardState);
+		findKingLocation(&winnerKing.x, &winnerKing.y, newBoardState);
+		delete(newBoardState);
+	}
+
+	
+}
+
+void Board::renderKingBox() {
+	SDL_Rect highlightRect;
+	highlightRect.w = boxXWidth;
+	highlightRect.h = boxYHeight;
+	SDL_Color drawColor;
+	if (highlightKingBox.x != -1) {
+		drawColor = ATTACK_COLOR;
+		SDL_SetRenderDrawColor(Window::renderer, drawColor.r, drawColor.g, drawColor.b, drawColor.a);
+
+		highlightRect.x = Game::boardTopLeftX + highlightKingBox.x * boxXWidth;
+		highlightRect.y = Game::boardTopLeftY + highlightKingBox.y * boxYHeight;
+		SDL_RenderFillRect(Window::renderer, &highlightRect);
+	}
+	if (winnerKing.x != -1) {
+		drawColor = WIN_COLOR;
+		SDL_SetRenderDrawColor(Window::renderer, drawColor.r, drawColor.g, drawColor.b, drawColor.a);
+
+		highlightRect.x = Game::boardTopLeftX + winnerKing.x * boxXWidth;
+		highlightRect.y = Game::boardTopLeftY + winnerKing.y * boxYHeight;
+		SDL_RenderFillRect(Window::renderer, &highlightRect);
+	}
+	
+
+
+	
+}
+
+int Board::isGameOver(BoardState* currentBoardState) {
+	std::vector<Move> currentLegalMoves = calculateLegalMoves(currentBoardState);
+	if (currentLegalMoves.size() == 0) {
+		winner = (currentBoardState->getCurrentTurn() == 'w' ? 'b' : 'w');
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+
+void Board::calculateBoardStates() {
+	int initialTime = SDL_GetTicks();
+	std::cout << "Total Board states in 1 move: " << totalPossibleFutureBoardPositions(boardState, 1) << std::endl;
+	std::cout << "Took : " << SDL_GetTicks() - initialTime << " Milliseconds" << std::endl;
+	initialTime = SDL_GetTicks();
+	std::cout << "Total Board states in 2 moves: " << totalPossibleFutureBoardPositions(boardState, 2) << std::endl;
+	std::cout << "Took : " << SDL_GetTicks() - initialTime << " Milliseconds" << std::endl;
+	initialTime = SDL_GetTicks();
+	std::cout << "Total Board states in 3 moves: " << totalPossibleFutureBoardPositions(boardState, 3) << std::endl;
+	std::cout << "Took : " << SDL_GetTicks() - initialTime << " Milliseconds" << std::endl;
+	
+}
+
+int Board::totalPossibleFutureBoardPositions(BoardState* currentBoardState, int depth) {
+	int totalAmount = 0;
+	if (depth == 0) {
+		return 1;		//if we're at the end then this is a board state
+	}
+	std::vector<Move> legalMoves = calculateLegalMoves(currentBoardState);
+	for (int i = 0; i < legalMoves.size(); i++) {
+		
+		BoardState* newBoardState = BoardState::copyBoardState(currentBoardState);
+		makeMove(legalMoves.at(i), newBoardState);
+		switchTurns(newBoardState);
+		int amountOfMoves = totalPossibleFutureBoardPositions(newBoardState, depth - 1);
+		/*if (depth == 3) {
+			std::cout << "Amount after move: " << char('A' + legalMoves.at(i).fromX) << 8 - legalMoves.at(i).fromY <<
+				" " <<char ('A' +legalMoves.at(i).toX)  <<8 - legalMoves.at(i).toY <<" :"<< amountOfMoves << std::endl;
+		}*/
+		totalAmount += amountOfMoves;
+		delete newBoardState;
+	}
+	return totalAmount;
+}
+
+
+void Board::makeRandomMove(BoardState* currentBoardState) {
+	legalMoves = calculateLegalMoves(currentBoardState);
+	int choice = rand() % legalMoves.size();
+	makeMove(legalMoves.at(choice), currentBoardState);
+	nextTurn(currentBoardState);
 }

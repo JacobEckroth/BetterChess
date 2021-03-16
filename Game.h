@@ -19,11 +19,15 @@ public:
 	void resize();
 
 	void handleMouseButtonDown(SDL_MouseButtonEvent& b);
-
+	void togglePromotionOptions();
 	void init();
 
+	void calculateBoardStates();
 
+	void reset();
 	~Game();
+
+	void makeRandomMove();
 
 
 };

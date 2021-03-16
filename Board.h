@@ -2,6 +2,7 @@
 #include "SDL.h"
 #include "Move.h"
 #include "BoardState.h"
+#include "Box.h"
 #include <vector>
 class Board
 {
@@ -25,6 +26,16 @@ private:
 	std::vector<Move> legalMoves;
 
 	std::vector<Move> highlightMoves;
+
+	Box highlightKingBox;
+	Box winnerKing;
+
+	Move promotionMove;
+	bool gameOver;
+
+	bool waitingForPromotionChoice;
+
+	char winner;
 
 public:
 	static int boxXWidth;
@@ -76,7 +87,7 @@ public:
 	//calculating legal move stuff
 	void clearMoves();
 	std::vector<Move> calculatePseudoLegalMoves(BoardState*);
-	void calculateLegalMoves(BoardState*);
+	std::vector<Move> calculateLegalMoves(BoardState*);
 	void calculateMovesAt(int x, int y, BoardState*, std::vector<Move>&);
 	
 
@@ -88,6 +99,7 @@ public:
 	void calculatePawnMoves(int x, int y,BoardState*, std::vector<Move>&);
 	void calculateCastlingMoves(int x, int y,BoardState*, std::vector<Move>&);
 
+	void nextTurn(BoardState* boardState);
 	bool inLegalMoves(struct Move&);
 	bool inPseudoMoves(struct Move&);
 
@@ -102,5 +114,30 @@ public:
 	bool kingInCheck(BoardState* currentBoardState);
 	void findKingLocation(int*, int*, BoardState*);
 	bool squareAttacked(int x, int y, BoardState* currentBoardState);
+	
+	
+	void updateHighlightKingBox();
+	void renderKingBox();
+
+	//game over stuff.
+	int isGameOver(BoardState* currentBoardState);
+	
+	void reset();
+
+	int totalPossibleFutureBoardPositions(BoardState*, int depth);
+	void calculateBoardStates();
+
+	void renderPromotionOptions();
+	void togglePromotionOptions();
+	void tryPickingPromotionPiece(int, int, BoardState*);
+	
+	void promoteQueen(BoardState*);
+	void promoteRook(BoardState*);
+	void promoteBishop(BoardState*);
+	void promoteKnight(BoardState*);
+
+	//random moves down here:
+
+	void makeRandomMove(BoardState*);
 };
 

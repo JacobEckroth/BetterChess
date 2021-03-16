@@ -8,6 +8,14 @@ Game::~Game() {
 	delete(board);
 }
 
+void Game::togglePromotionOptions() {
+	board->togglePromotionOptions();
+}
+
+
+void Game::calculateBoardStates() {
+	board->calculateBoardStates();
+}
 
 void Game::render() {
 	board->render(board->getBoardState());
@@ -15,6 +23,10 @@ void Game::render() {
 
 void Game::update() {
 
+}
+
+void Game::makeRandomMove() {
+	board->makeRandomMove(board->getBoardState());
 }
 
 void Game::handleMouseButtonDown(SDL_MouseButtonEvent& b) {
@@ -36,6 +48,10 @@ void Game::resize() {
 	boardTopLeftX = (Window::screenWidth - board->getWidth()) / 2;
 	boardTopLeftY = (Window::screenHeight - board->getHeight()) / 2;
 
+}
+
+void Game::reset() {
+	board->reset();
 }
 
 

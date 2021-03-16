@@ -2,6 +2,8 @@
 class BoardState
 {
 public:
+
+	~BoardState();
 	
 	unsigned int** getBoard();
 	void setBoard(unsigned int**);
@@ -18,6 +20,8 @@ public:
 	bool getBlackCanQueensideCastle();
 	void setBlackCanQueensideCastle(bool);
 
+
+	int getDepth();
 	int getEnPassantX();
 	void setEnPassantX(int);
 
@@ -43,6 +47,8 @@ private:
 	int enPassantY;
 	int halfMoveClock;
 	int fullMoveClock;
+
+	int depth;	//0 for main state, add 1 for eveyr move after it.
 
 
 };

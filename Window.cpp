@@ -51,7 +51,18 @@ void Window::handleEvents() {
 void Window::handleKeyDown(SDL_KeyboardEvent& key) {
 	
 	switch (key.keysym.scancode) {
-	
+	case(21):
+		game->reset();
+		break;
+	case 6:
+		game->calculateBoardStates();
+		break;
+	case 19:
+		game->togglePromotionOptions();
+		break;
+	case 53:
+		game->makeRandomMove();
+		break;
 	default:
 		std::cout << "Scancode is:" << key.keysym.scancode << std::endl;
 		break;
