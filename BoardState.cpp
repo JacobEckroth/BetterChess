@@ -8,11 +8,11 @@ BoardState::~BoardState() {
 	delete[] board;
 }
 
-unsigned int** BoardState::getBoard() {
+uint8_t** BoardState::getBoard() {
 	return board;
 }
 
-void BoardState::setBoard(unsigned int** newBoard) {
+void BoardState::setBoard(uint8_t** newBoard) {
 	board = newBoard;
 }
 
@@ -96,9 +96,9 @@ BoardState* BoardState::copyBoardState(BoardState* currentBoardState) {
 	newState->enPassantY = currentBoardState->enPassantY;
 	newState->halfMoveClock = currentBoardState->halfMoveClock;
 	newState->fullMoveClock = currentBoardState->fullMoveClock;
-	newState->board = new unsigned int* [Board::boardXBoxes];
+	newState->board = new uint8_t* [Board::boardXBoxes];
 	for (int x = 0; x < Board::boardXBoxes; x++) {
-		(newState->board)[x]= new unsigned int[Board::boardYBoxes];
+		(newState->board)[x]= new uint8_t[Board::boardYBoxes];
 	}
 	for (int x = 0; x < Board::boardXBoxes; x++) {
 		for (int y = 0; y < Board::boardYBoxes; y++) {

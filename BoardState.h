@@ -1,12 +1,13 @@
 #pragma once
+#include <stdint.h>
 class BoardState
 {
 public:
 
 	~BoardState();
 	
-	unsigned int** getBoard();
-	void setBoard(unsigned int**);
+	uint8_t** getBoard();
+	void setBoard(uint8_t**);
 
 
 	void setCurrentTurn(char);
@@ -37,7 +38,7 @@ public:
 	static BoardState* copyBoardState(BoardState*);
 	
 private:
-	unsigned int** board;
+	uint8_t** board;
 	char currentTurn;
 	bool whiteCanKingsideCastle;
 	bool whiteCanQueensideCastle;

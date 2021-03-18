@@ -23,13 +23,13 @@ public:
 	static SDL_Texture* blackPawnTexture;
 
 
-	static unsigned int white;
-	static unsigned int black;
-	static unsigned int queen;
-	static unsigned int king;
-	static unsigned int bishop;
-	static unsigned int knight;
-	static unsigned int rook;
-	static unsigned int pawn;
+	static uint8_t white;
+	static uint8_t black;
+	static uint8_t	queen;
+	static uint8_t king;
+	static uint8_t bishop;
+	static uint8_t knight;
+	static uint8_t rook;
+	static uint8_t pawn;
 };
 

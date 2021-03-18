@@ -13,14 +13,14 @@ SDL_Texture* Piece::blackQueenTexture;
 SDL_Texture* Piece::whitePawnTexture;
 SDL_Texture* Piece::blackPawnTexture;
 
-unsigned int Piece::white;
-unsigned int Piece::black;
-unsigned int Piece::queen;
-unsigned int Piece::king;
-unsigned int Piece::bishop;
-unsigned int Piece::knight;
-unsigned int Piece::rook;
-unsigned int Piece::pawn;
+uint8_t Piece::white;
+uint8_t Piece::black;
+uint8_t Piece::queen;
+uint8_t Piece::king;
+uint8_t Piece::bishop;
+uint8_t Piece::knight;
+uint8_t Piece::rook;
+uint8_t Piece::pawn;
 
 void Piece::init() {
 	loadImages();

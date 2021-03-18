@@ -12,7 +12,7 @@
 #define WIN_COLOR {255,215,0,200}
 #define AMOUNT_OF_BOX .8
 #define STARTING_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-#define TEST_FEN "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - -	"
+#define TEST_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 int Board::boxXWidth;
 int Board::boxYHeight;
 int Board::boardXBoxes;
@@ -51,9 +51,9 @@ void Board::init() {
 
 	boardState = new BoardState();
 
-	unsigned int** board = new unsigned int* [boardXBoxes];
+	uint8_t** board = new uint8_t* [boardXBoxes];
 	for (int i = 0; i < boardXBoxes; ++i) {
-		board[i] = new unsigned int[boardYBoxes];
+		board[i] = new uint8_t[boardYBoxes];
 	}
 	for (int x = 0; x < boardXBoxes; ++x) {
 		for (int y = 0; y < boardYBoxes; ++y) {
@@ -221,7 +221,7 @@ void Board::renderBoard() {
 
 
 void Board::renderPieces(BoardState* currentBoardState) {
-	unsigned int** board = currentBoardState->getBoard();
+	uint8_t** board = currentBoardState->getBoard();
 	for (int x = 0; x < boardXBoxes; ++x) {
 		for (int y = 0; y < boardYBoxes; ++y) {
 			if (board[x][y] != 0) {
@@ -234,13 +234,13 @@ void Board::renderPieces(BoardState* currentBoardState) {
 }
 
 void Board::renderPiece(int x, int y, BoardState* currentBoardState) {
-	unsigned int currentPiece = currentBoardState->getBoard()[x][y];
+	uint8_t currentPiece = currentBoardState->getBoard()[x][y];
 	SDL_Texture* currentTexture = getTextureAtLocation(x, y, currentBoardState);
 	renderPieceTexture(currentTexture, x, y);
 }
 
 SDL_Texture* Board::getTextureAtLocation(int x, int y, BoardState* currentBoardState) {
-	unsigned int currentPiece = currentBoardState->getBoard()[x][y];
+	uint8_t currentPiece = currentBoardState->getBoard()[x][y];
 	if (currentPiece == (Piece::black | Piece::king)) {
 		return Piece::blackKingTexture;
 	}
@@ -363,7 +363,7 @@ void Board::loadBoardFromFen(const char* fenNotation, BoardState* currentBoardSt
 	int index = 0;
 	int column;
 
-	unsigned int** board = currentBoardState->getBoard();
+	uint8_t** board = currentBoardState->getBoard();
 	for (int rank = 0; rank < boardYBoxes; rank++) {
 		column = 0;
 		while (fenNotation[index] != '/' && fenNotation[index] != ' ') {
@@ -575,7 +575,7 @@ void Board::attemptPlacePiece(int x, int y, BoardState* currentBoardState) {
 	
 	
 	Move newMove = { draggingPieceX,draggingPieceY,x,y };
-	unsigned int** board = currentBoardState->getBoard();
+	uint8_t** board = currentBoardState->getBoard();
 	int enPassantX = currentBoardState->getEnPassantX();
 	int enPassantY = currentBoardState->getEnPassantY();
 
@@ -777,7 +777,7 @@ std::vector<Move> Board::calculateLegalMoves(BoardState* currentBoardState) {
 
 void Board::makeMove(struct Move move, BoardState* currentBoardState) {
 	
-	unsigned int** board = currentBoardState->getBoard();
+	uint8_t** board = currentBoardState->getBoard();
 	int enPassantX = currentBoardState->getEnPassantX();
 	int enPassantY = currentBoardState->getEnPassantY();
 	if (isEnPassant(move.fromX, move.fromY, move.toX, move.toY, currentBoardState)) {
@@ -856,7 +856,7 @@ void Board::makeMove(struct Move move, BoardState* currentBoardState) {
 //returns true if a piece is a current players piece, false otherwise.
 bool Board::pieceIsCurrentPlayersPiece(int x, int y, BoardState* currentBoardState) {
 	char currentTurn = currentBoardState->getCurrentTurn();
-	unsigned int** board = currentBoardState->getBoard();
+	uint8_t** board = currentBoardState->getBoard();
 	if ((currentTurn == 'w' && (board[x][y] & Piece::white) == Piece::white) || (currentTurn == 'b' && (board[x][y] & Piece::black) == Piece::black)) {
 		return true;
 	}
@@ -864,7 +864,7 @@ bool Board::pieceIsCurrentPlayersPiece(int x, int y, BoardState* currentBoardSta
 }
 
 void Board::calculateMovesAt(int x, int y, BoardState* currentBoardState, std::vector<Move>& currentPseudo) {
-	unsigned int** board = currentBoardState->getBoard();
+	uint8_t** board = currentBoardState->getBoard();
 	if ((board[x][y] & Piece::rook) == Piece::rook) {
 
 		calculateRookMoves(x, y, currentBoardState,currentPseudo);
@@ -888,7 +888,7 @@ void Board::calculateMovesAt(int x, int y, BoardState* currentBoardState, std::v
 }
 
 void Board::calculateRookMoves(int x, int y, BoardState* currentBoardState, std::vector<Move>& currentPseudo) {
-	unsigned int** board = currentBoardState->getBoard();
+	uint8_t** board = currentBoardState->getBoard();
 	//going to the right on the board.
 	for (int currX = x + 1; currX < boardXBoxes; ++currX) {
 		if (board[currX][y] == 0) {
@@ -954,7 +954,7 @@ void Board::calculateRookMoves(int x, int y, BoardState* currentBoardState, std:
 }
 void Board::calculateBishopMoves(int x, int y, BoardState* currentBoardState, std::vector<Move>& currentPseudo) {
 	//going down and to the right
-	unsigned int** board = currentBoardState->getBoard();
+	uint8_t** board = currentBoardState->getBoard();
 	for (int change = 1; x + change < boardXBoxes && y + change < boardYBoxes; ++change) {
 		if (board[x + change][y + change] == 0) {
 			currentPseudo.push_back({ x,y,x + change,y + change, false, false, false });
@@ -1020,7 +1020,7 @@ void Board::calculateQueenMoves(int x, int y, BoardState* currentBoardState, std
 	calculateRookMoves(x, y, currentBoardState,currentPseudo);
 }
 void Board::calculateKingMoves(int x, int y, BoardState* currentBoardState, std::vector<Move>& currentPseudo) {
-	unsigned int** board = currentBoardState->getBoard();
+	uint8_t** board = currentBoardState->getBoard();
 	//king moving down
 	if (y + 1 < boardYBoxes) {
 		for (int xChange = -1; xChange <= 1; xChange++) {
@@ -1065,7 +1065,7 @@ void Board::calculateKingMoves(int x, int y, BoardState* currentBoardState, std:
 
 //just to separate this a bit from the king moves, because it's kinda busy.
 void Board::calculateCastlingMoves(int x, int y, BoardState* currentBoardState, std::vector<Move>& currentPseudo) {
-	unsigned int** board = currentBoardState->getBoard();
+	uint8_t** board = currentBoardState->getBoard();
 	if ((board[x][y] & Piece::white) == Piece::white) {
 		if (currentBoardState->getWhiteCanKingsideCastle()) {
 			if (board[x + 1][y] == 0 && board[x + 2][y] == 0) {
@@ -1101,7 +1101,7 @@ void Board::updateCastling(int fromX, int fromY, int toX, int toY, BoardState* c
 	int whiteY = boardYBoxes - 1;
 	int blackY = 0;
 
-	unsigned int** board = boardState->getBoard();
+	uint8_t** board = boardState->getBoard();
 	if (currentBoardState->getCurrentTurn() == 'w') {
 		if ((board[fromX][fromY] & Piece::king) == Piece::king) {
 			currentBoardState->setWhiteCanKingsideCastle(false);
@@ -1147,7 +1147,7 @@ void Board::updateCastling(int fromX, int fromY, int toX, int toY, BoardState* c
 
 void Board::calculateKnightMoves(int x, int y, BoardState* currentBoardState,std::vector<Move>& currentPseudo) {
 	//knight moving up.
-	unsigned int** board = currentBoardState->getBoard();
+	uint8_t** board = currentBoardState->getBoard();
 	if (y - 2 >= 0) {
 		if (x + 1 < boardXBoxes) {
 			if (board[x + 1][y - 2] == 0 || !pieceIsCurrentPlayersPiece(x + 1, y - 2, currentBoardState)) {
@@ -1204,7 +1204,7 @@ void Board::calculateKnightMoves(int x, int y, BoardState* currentBoardState,std
 
 }
 void Board::calculatePawnMoves(int x, int y, BoardState* currentBoardState, std::vector<Move>& currentPseudo) {
-	unsigned int** board = currentBoardState->getBoard();
+	uint8_t** board = currentBoardState->getBoard();
 	//do promotion later.
 	if (currentBoardState->getCurrentTurn() == 'w') {
 		//moving forward one.
@@ -1406,7 +1406,7 @@ void Board::findKingLocation(int* xPos, int* yPos, BoardState* currentBoardState
 	char currentPlayer = currentBoardState->getCurrentTurn();
 	for (int x = 0; x < boardXBoxes; ++x) {
 		for (int y = 0; y < boardYBoxes; ++y) {
-			unsigned int currentSquare = currentBoardState->getBoard()[x][y];
+			uint8_t currentSquare = currentBoardState->getBoard()[x][y];
 			if (currentPlayer == 'w') {
 				if (currentSquare == (Piece::white | Piece::king)) {
 					*xPos = x;
