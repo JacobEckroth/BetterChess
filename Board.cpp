@@ -15,7 +15,8 @@
 #define LAST_MOVE_COLOR {0,0,255,100}
 #define AMOUNT_OF_BOX .8
 #define STARTING_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-#define TEST_FEN "r3k2r/Pppp1ppp/1b3nbN/nP6/BBPPP3/q4N2/Pp4PP/R2Q1RK1 b kq - 0 1"
+#define TEST_FEN "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -"
+#define totalTests 4
 int Board::boxXWidth;
 int Board::boxYHeight;
 int Board::boardXBoxes;
@@ -1098,30 +1099,36 @@ void Board::makeMove(struct Move move, BoardState* currentBoardState) {
 			if (turn == 'w') {
 				board[move.toBox.x][move.toBox.y] = Piece::white | Piece::queen;
 				whiteLocations.getQueenLocations().push_back({ move.toBox });
+				whiteLocations.removePawn(move.fromBox);
 			}
 			else {
 				board[move.toBox.x][move.toBox.y] = Piece::black | Piece::queen;
 				blackLocations.getQueenLocations().push_back({ move.toBox });
+				blackLocations.removePawn(move.fromBox);
 			}
 			break;
 		case 'r':
 			if (turn == 'w') {
 				board[move.toBox.x][move.toBox.y] = Piece::white | Piece::rook;
 				whiteLocations.getRookLocations().push_back({ move.toBox });
+				whiteLocations.removePawn(move.fromBox);
 			}
 			else {
 				board[move.toBox.x][move.toBox.y] = Piece::black | Piece::rook;
 				blackLocations.getRookLocations().push_back({ move.toBox });
+				blackLocations.removePawn(move.fromBox);
 			}
 			break;
 		case 'n':
 			if (turn == 'w') {
 				board[move.toBox.x][move.toBox.y] = Piece::white | Piece::knight;
 				whiteLocations.getKnightLocations().push_back({ move.toBox });
+				whiteLocations.removePawn(move.fromBox);
 			}
 			else {
 				board[move.toBox.x][move.toBox.y] = Piece::black | Piece::knight;
 				blackLocations.getKnightLocations().push_back({ move.toBox });
+				blackLocations.removePawn(move.fromBox);
 			}
 			break;
 
@@ -1129,10 +1136,12 @@ void Board::makeMove(struct Move move, BoardState* currentBoardState) {
 			if (turn == 'w') {
 				board[move.toBox.x][move.toBox.y] = Piece::white | Piece::bishop;
 				whiteLocations.getBishopLocations().push_back({ move.toBox });
+				whiteLocations.removePawn(move.fromBox);
 			}
 			else {
 				board[move.toBox.x][move.toBox.y] = Piece::black | Piece::bishop;
 				blackLocations.getBishopLocations().push_back({ move.toBox });
+				blackLocations.removePawn(move.fromBox);
 			}
 			break;
 		}
@@ -1154,11 +1163,11 @@ void Board::makeMove(struct Move move, BoardState* currentBoardState) {
 
 	if (turn == 'w') {
 		newStore->setThreatInfo(whiteThreatened.threatenedInfo, blackThreatened.threatenedInfo,
-			whiteThreatened.attackedInfo, blackThreatened.attackedInfo, whiteThreatened.amountAttacked);
+			whiteThreatened.attackedInfo, blackThreatened.attackedInfo, whiteThreatened.amountAttacked,whiteThreatened.attackedByKnight,whiteThreatened.attackedFromBox);
 	}
 	else {
 		newStore->setThreatInfo(whiteThreatened.threatenedInfo, blackThreatened.threatenedInfo,
-			whiteThreatened.attackedInfo, blackThreatened.attackedInfo, blackThreatened.amountAttacked);
+			whiteThreatened.attackedInfo, blackThreatened.attackedInfo, blackThreatened.amountAttacked,blackThreatened.attackedByKnight,blackThreatened.attackedFromBox);
 	}
 	newStore->setThreatBoxes(whiteThreatened.straightLeftBox, whiteThreatened.upLeftBox, whiteThreatened.straightUpBox,
 		whiteThreatened.upRightBox, whiteThreatened.straightRightBox, whiteThreatened.downRightBox, whiteThreatened.straightDownBox,
@@ -1271,7 +1280,7 @@ void Board::unMakeMove(BoardState* currentBoardState) {
 			{previousMove->getPreviousWhiteDownRightBox().x,previousMove->getPreviousWhiteDownRightBox().y},
 			{previousMove->getPreviousWhiteStraightDownBox().x,previousMove->getPreviousWhiteStraightDownBox().y},
 			{previousMove->getPreviousWhiteDownLeftBox().x,previousMove->getPreviousWhiteDownLeftBox().y},
-			previousMove->getPreviousAmountAttacked()
+			previousMove->getPreviousAmountAttacked(),{previousMove->getPreviousAttackedFromBox().x,previousMove->getPreviousAttackedFromBox().y},previousMove->getPreviousAttackedByKnight()
 
 		};
 		blackThreatened = {
@@ -1286,7 +1295,7 @@ void Board::unMakeMove(BoardState* currentBoardState) {
 			{previousMove->getPreviousBlackDownRightBox().x,previousMove->getPreviousBlackDownRightBox().y},
 			{previousMove->getPreviousBlackStraightDownBox().x,previousMove->getPreviousBlackStraightDownBox().y},
 			{previousMove->getPreviousBlackDownLeftBox().x,previousMove->getPreviousBlackDownLeftBox().y},
-			0
+			0,{-1,-1},false
 
 		};
 	}
@@ -1303,7 +1312,7 @@ void Board::unMakeMove(BoardState* currentBoardState) {
 			{previousMove->getPreviousWhiteDownRightBox().x,previousMove->getPreviousWhiteDownRightBox().y},
 			{previousMove->getPreviousWhiteStraightDownBox().x,previousMove->getPreviousWhiteStraightDownBox().y},
 			{previousMove->getPreviousWhiteDownLeftBox().x,previousMove->getPreviousWhiteDownLeftBox().y},
-			0
+			0,{-1,-1},false
 
 		};
 		blackThreatened = {
@@ -1318,7 +1327,7 @@ void Board::unMakeMove(BoardState* currentBoardState) {
 			{previousMove->getPreviousBlackDownRightBox().x,previousMove->getPreviousBlackDownRightBox().y},
 			{previousMove->getPreviousBlackStraightDownBox().x,previousMove->getPreviousBlackStraightDownBox().y},
 			{previousMove->getPreviousBlackDownLeftBox().x,previousMove->getPreviousBlackDownLeftBox().y},
-			previousMove->getPreviousAmountAttacked()
+			previousMove->getPreviousAmountAttacked(), {previousMove->getPreviousAttackedFromBox().x,previousMove->getPreviousAttackedFromBox().y},previousMove->getPreviousAttackedByKnight()
 
 		};
 	}
@@ -1505,6 +1514,7 @@ void Board::updateThreats(Move lastMove, BoardState* currentBoardState) {
 				whiteThreatened.amountAttacked++;
 				whiteThreatened.attackedByKnight = true;
 				whiteThreatened.attackedFromBox = { lastMove.toBox.x,lastMove.toBox.y };
+				
 			}
 		}
 		else if (currentBoardState->getBoard()[lastMove.toBox.x][lastMove.toBox.y] == (Piece::black | Piece::pawn)) {
@@ -1528,7 +1538,13 @@ void Board::updateThreats(Move lastMove, BoardState* currentBoardState) {
 		}
 	}
 
-
+	//if we castled just update for the rook. there's a better way to do this but have you seen the rest of my code?
+	if (lastMove.kingSideCastle || lastMove.queenSideCastle) {
+		updateStraightDownThreats(currentTurn, currentBoardState);
+		updateStraightUpThreats(currentTurn, currentBoardState);
+		updateStraightLeftThreats(currentTurn, currentBoardState);
+		updateStraightRightThreats(currentTurn, currentBoardState);
+	}
 	if (inSameRow(kingBox, lastMove.toBox)) {
 		//std::cout << "Last move was from same row as king. " << std::endl;
 		if (kingBox.x < lastMove.toBox.x) {
@@ -1540,6 +1556,7 @@ void Board::updateThreats(Move lastMove, BoardState* currentBoardState) {
 		}
 	}
 	else if (inSameCol(kingBox, lastMove.toBox)) {
+		
 		if (kingBox.y < lastMove.toBox.y) {
 			updateStraightDownThreats(currentTurn, currentBoardState);
 		}
@@ -1787,6 +1804,7 @@ void Board::updateStraightDownThreats(char currentTurn, BoardState* currentBoard
 			}
 			//it's a white piece.
 			else {
+			
 				if ((board[kingSquare.x][y] & Piece::rook) == Piece::rook || (board[kingSquare.x][y] & Piece::queen) == Piece::queen) {
 					blackThreatened.straightDownBox = { kingSquare.x,y };
 					if (defense == 0) {
@@ -1798,6 +1816,7 @@ void Board::updateStraightDownThreats(char currentTurn, BoardState* currentBoard
 						break;
 					}
 					else {
+					
 						blackThreatened.threatenedInfo |= KingThreatenedInfo::straightDownThreatened;
 						foundAThreat = true;
 						break;
@@ -2408,7 +2427,7 @@ bool Board::doesBoxBlockAttack(Box box, BoardState* currentBoardState) {
 	if (box.x == attackedFromBox.x && box.y == attackedFromBox.y) {
 		return true;
 	}
-
+	
 
 	switch (attackedInfo) {
 	case KingThreatenedInfo::straightDownThreatened:
@@ -2491,6 +2510,8 @@ bool Board::doesBoxBlockAttack(Box box, BoardState* currentBoardState) {
 			return false;
 		}
 		break;
+	default:
+		std::cout << "error in switch" << std::endl;
 	}
 }
 
@@ -2539,6 +2560,9 @@ void Board::addStraightUpMoves(Box box, BoardState* currentBoardState, std::vect
 		}
 	}
 }
+
+//WHY ARE THERE SO MANY PAWN MOVES BEING ADDED
+
 
 void Board::addStraightDownMoves(Box box, BoardState* currentBoardState, std::vector<Move>& moves) {
 	int x = box.x;
@@ -2780,8 +2804,7 @@ void Board::addDownRightPawnMoves(Box box, BoardState* currentBoardState, std::v
 					attemptAddMove({ {x,y},{x + 1,y + 1} ,false,false,false,true,'r' }, currentBoardState, moves);
 					attemptAddMove({ {x,y},{x + 1,y + 1} ,false,false,false,true,'q' }, currentBoardState, moves);
 					attemptAddMove({ {x,y},{x + 1,y + 1} ,false,false,false,true,'b' }, currentBoardState, moves);
-					attemptAddMove({ {x,y},{x + 1,y + 1 }, false, false, false, true, 'n'
-						}, currentBoardState, moves);
+					attemptAddMove({ {x,y},{x + 1,y + 1 }, false, false, false, true, 'n'}, currentBoardState, moves);
 				}
 				else {
 					attemptAddMove({ {x,y},{x + 1,y + 1} ,false,false,false,false,' ' }, currentBoardState, moves);
@@ -3347,7 +3370,7 @@ void Board::calculateBishopLegalMoves(Box bishopBox, Box kingBox, BoardState* cu
 		else if (bishopBox.y > kingBox.y) {
 			//no bishop moves
 			if ((currentKingInfo.threatenedInfo & KingThreatenedInfo::straightDownThreatened) == KingThreatenedInfo::straightDownThreatened) {
-				if (currentKingInfo.straightDownBox.y < bishopBox.y) {
+				if (currentKingInfo.straightDownBox.y > bishopBox.y) {
 					addAll = false;
 				}
 
@@ -3613,16 +3636,16 @@ void Board::calculateCastlingLegalMoves(Box kingBox, BoardState* currentBoardSta
 	int x = kingBox.x;
 	int y = kingBox.y;
 	uint8_t** board = currentBoardState->getBoard();
-	uint8_t attackedInfo;
+	int attackedAmount;
 	char currentTurn = currentBoardState->getCurrentTurn();
 	if (currentTurn == 'w') {
-		attackedInfo = blackThreatened.attackedInfo;
+		attackedAmount = whiteThreatened.amountAttacked;
 	}
 	else {
-		attackedInfo = blackThreatened.attackedInfo;
+		attackedAmount = blackThreatened.amountAttacked;
 	}
 	//if the king is attacked you can't castle. 
-	if (attackedInfo != 0) {
+	if (attackedAmount != 0) {
 		return;
 	}
 
@@ -4380,19 +4403,15 @@ int Board::isGameOver(BoardState* currentBoardState) {
 }
 
 
+
 void Board::calculateBoardStates() {
-	int initialTime = SDL_GetTicks();
-	std::cout << "Total Board states in 1 move: " << totalPossibleFutureBoardPositions(boardState, 1) << std::endl;
-	std::cout << "Took : " << SDL_GetTicks() - initialTime << " Milliseconds" << std::endl;
-	initialTime = SDL_GetTicks();
-	std::cout << "Total Board states in 2 moves: " << totalPossibleFutureBoardPositions(boardState, 2) << std::endl;
-	std::cout << "Took : " << SDL_GetTicks() - initialTime << " Milliseconds" << std::endl;
-	/*initialTime = SDL_GetTicks();
-	std::cout << "Total Board states in 3 moves: " << totalPossibleFutureBoardPositions(boardState, 3) << std::endl;
-	std::cout << "Took : " << SDL_GetTicks() - initialTime << " Milliseconds" << std::endl;
-	/*initialTime = SDL_GetTicks();
-	std::cout << "Total Board states in 4 moves: " << totalPossibleFutureBoardPositions(boardState, 4) << std::endl;
-	std::cout << "Took : " << SDL_GetTicks() - initialTime << " Milliseconds" << std::endl;*/
+	for (int i = 1; i <= totalTests; i++) {
+		int initialTime = SDL_GetTicks();
+		std::cout << "Total Board states in "<< i <<" moves: " << totalPossibleFutureBoardPositions(boardState, i) <<std::endl;
+		std::cout << "Took : " << SDL_GetTicks() - initialTime << " Milliseconds" << std::endl;
+		initialTime = SDL_GetTicks();
+	}
+	
 	
 }
 
@@ -4408,7 +4427,7 @@ int Board::totalPossibleFutureBoardPositions(BoardState* currentBoardState, int 
 		makeMove(legalMoves.at(i), currentBoardState);
 
 		int amountOfMoves = totalPossibleFutureBoardPositions(currentBoardState, depth - 1);
-	 if (depth == 2){
+	 if (depth == totalTests){
 			std::cout <<  char('a' + legalMoves.at(i).fromBox.x) << 8 - legalMoves.at(i).fromBox.y  << char('a' + legalMoves.at(i).toBox.x) << 8 - legalMoves.at(i).toBox.y << ": " << amountOfMoves << std::endl;
 		}
 		totalAmount += amountOfMoves;

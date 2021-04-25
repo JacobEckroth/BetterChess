@@ -99,14 +99,19 @@ void StoreMove::setPieceTaken(uint8_t newPiece) {
 	pieceTaken = newPiece;
 }
 
-void StoreMove::setThreatInfo(uint8_t whiteThreatened, uint8_t blackThreatened, uint8_t whiteAttacked, uint8_t blackAttacked, int amountAttacked) {
+void StoreMove::setThreatInfo(uint8_t whiteThreatened, uint8_t blackThreatened, uint8_t whiteAttacked, uint8_t blackAttacked, int amountAttacked, bool attackedByKnight,Box attackedFromBox) {
 	previousWhiteThreatenedInfo = whiteThreatened;
 	previousBlackThreatenedInfo = blackThreatened;
 	previousWhiteAttackedInfo = whiteAttacked;
 	previousBlackAttackedInfo = blackAttacked;
 	previousAmountAttacked = amountAttacked;
-}
+	previousAttackedByKnight = attackedByKnight;
+	previousAttackedFromBox = { attackedFromBox.x,attackedFromBox.y };
 
+}
+bool StoreMove::getPreviousAttackedByKnight() {
+	return previousAttackedByKnight;
+}
 uint8_t StoreMove::getPreviousWhiteThreatenedInfo() {
 	return previousWhiteThreatenedInfo;
 }
@@ -123,6 +128,9 @@ uint8_t StoreMove::getPreviousBlackAttackedInfo() {
 
 int StoreMove::getPreviousAmountAttacked() {
 	return previousAmountAttacked;
+}
+Box StoreMove::getPreviousAttackedFromBox() {
+	return previousAttackedFromBox;
 }
 
 void StoreMove::setThreatBoxes(Box whiteStraightLeftBox, Box whiteUpLeftBox, Box whiteStraightUpBox,

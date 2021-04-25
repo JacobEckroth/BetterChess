@@ -25,7 +25,7 @@ public:
 	void setPreviousEnPassant(Box);
 	void setTookPiece(bool);
 	void setPieceTaken(uint8_t);
-	void setThreatInfo(uint8_t, uint8_t, uint8_t, uint8_t, int);
+	void setThreatInfo(uint8_t, uint8_t, uint8_t, uint8_t, int,bool,Box previousAttackedFrom);
 
 	void setThreatBoxes(Box, Box, Box, Box, Box, Box, Box, Box
 						,Box, Box, Box, Box, Box, Box, Box, Box);
@@ -55,6 +55,10 @@ public:
 	uint8_t getPreviousBlackAttackedInfo();
 	int getPreviousAmountAttacked();
 
+	bool getPreviousAttackedByKnight();
+
+	Box getPreviousAttackedFromBox();
+
 private:
 	StoreMove* next;
 	Move move;
@@ -66,11 +70,12 @@ private:
 	Box previousEnPassant;
 	bool tookAPiece;
 	uint8_t pieceTaken;
-
+	bool previousAttackedByKnight;
 	uint8_t previousWhiteThreatenedInfo;
 	uint8_t previousBlackThreatenedInfo;
 	uint8_t previousWhiteAttackedInfo;
 	uint8_t previousBlackAttackedInfo;
+	Box previousAttackedFromBox;
 	int previousAmountAttacked;
 	Box previousWhiteStraightLeftBox, previousWhiteStraightRightBox, previousWhiteStraightUpBox,
 		previousWhiteStraightDownBox, previousWhiteUpLeftBox, previousWhiteUpRightBox,
