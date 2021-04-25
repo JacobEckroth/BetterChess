@@ -26,6 +26,7 @@ public:
 
 	void reset();
 	~Game();
+	void unmakeMove();
 
 	void makeRandomMove();
 

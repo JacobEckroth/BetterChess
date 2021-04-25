@@ -54,4 +54,8 @@ void Game::reset() {
 	board->reset();
 }
 
+void Game::unmakeMove() {
+	board->unMakeMove(board->getBoardState());
+	board->nextTurn(board->getBoardState());
+}
 

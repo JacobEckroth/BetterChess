@@ -1,10 +1,8 @@
 #pragma once
-
+#include "Box.h"
 struct Move {
-	int fromX;
-	int fromY;
-	int toX;
-	int toY;
+	Box fromBox;
+	Box toBox;
 	bool kingSideCastle;
 	bool queenSideCastle;
 	bool enPassant;
