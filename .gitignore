@@ -1,5 +1,15 @@
+#Build files (Windows)
 *.vcxproj
-Debug/
-x64/
 *.filters
 *.user
+#Windows binary
+Debug/
+x64/
+#Linux binary
+chess
+#Build files (Linux)
+Makefile
+CMakeCache.txt
+cmake_install.cmake
+CMakeFiles
+
