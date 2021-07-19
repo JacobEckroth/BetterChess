@@ -4,7 +4,9 @@
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
 #include <ctime>
-#include <crtdbg.h>
+#if defined(_WIN32) and defined(_MSC_VER)
+	#include <crtdbg.h>
+#endif
 #include <iostream>
  int main() {
 	srand(time(NULL));
@@ -36,7 +38,8 @@
 	delete gameWindow;
 
 
-
-	_CrtDumpMemoryLeaks();
+	#if defined(_WIN32) and defined(_MSC_VER)
+		_CrtDumpMemoryLeaks(); //can be called only on Windows with MSVC compiler (e.g not mingw)
+	#endif
 	return 0;
 }
