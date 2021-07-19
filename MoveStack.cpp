@@ -1,5 +1,6 @@
 #include "MoveStack.h"
 #include <assert.h>
+#include <cstddef> //for using NULL
 
 void MoveStack::init() {
 	top = NULL;

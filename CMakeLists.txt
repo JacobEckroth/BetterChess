@@ -1,0 +1,12 @@
+project(chess)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+cmake_minimum_required(VERSION 3.0)
+find_package(SDL2 REQUIRED)
+find_package(SDL2_image REQUIRED)
+include_directories(${SDL2_INCLUDE_DIRS})
+include_directories(${SDL2_IMAGE_INCLUDE_DIR})
+file(COPY "images" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/") #otherwise we get chess without images
+set(SOURCES main.cpp Game.cpp Window.cpp Piece.cpp Board.cpp BoardState.cpp MoveStack.cpp PieceLocations.cpp StoreMove.cpp)
+add_executable(chess ${SOURCES})
+target_link_libraries(chess SDL2)
+target_link_libraries(chess SDL2::Image)
