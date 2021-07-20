@@ -1,5 +1,8 @@
 # BetterChess
 
+## Special Thanks
+Thank you to Github User [nagayev](https://github.com/nagayev) for assisting with the build instructions regarding CMAKE as well as some refactoring.
+
 ## About
 
 This is a chess program that I created in the spring of 2021. I have attempted to make chess many times, and this is my final version (at least for now as of june 2021).
