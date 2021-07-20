@@ -2376,23 +2376,9 @@ bool Board::pieceIsCurrentPlayersPiece(int x, int y, BoardState* currentBoardSta
 bool Board::kingAttacked(BoardState* currentBoardState) {
 	char currentTurn = currentBoardState->getCurrentTurn();
 	if (currentTurn == 'w') {
-		if (whiteThreatened.amountAttacked >= 1) {
-			return true;
-		}
-		else {
-			return false;
-		}
+		return whiteThreatened.amountAttacked >= 1;
 	}
-	else {
-		if (blackThreatened.amountAttacked >= 1) {
-			return true;
-		}
-		else {
-			return false;
-		}
-	}
-
-
+	return blackThreatened.amountAttacked >= 1;
 }
 
 bool Board::doesBoxBlockAttack(Box box, BoardState* currentBoardState) {
@@ -2417,12 +2403,7 @@ bool Board::doesBoxBlockAttack(Box box, BoardState* currentBoardState) {
 
 	//when you're attacked by a knight the only way to block it with a piece is to take it.
 	if (attackedByKnight) {
-		if (box.x == attackedFromBox.x && box.y == attackedFromBox.y) {
-			return true;
-		}
-		else {
-			return false;
-		}
+		return box.x == attackedFromBox.x && box.y == attackedFromBox.y;
 	}
 	if (box.x == attackedFromBox.x && box.y == attackedFromBox.y) {
 		return true;
@@ -2431,38 +2412,16 @@ bool Board::doesBoxBlockAttack(Box box, BoardState* currentBoardState) {
 
 	switch (attackedInfo) {
 	case KingThreatenedInfo::straightDownThreatened:
-		if (box.x == attackedFromBox.x && box.y < attackedFromBox.y && box.y > kingBox.y) {
-			return true;
-		}
-		else {
-			return false;
-		}
-
+		return box.x == attackedFromBox.x && box.y < attackedFromBox.y && box.y > kingBox.y;
 		break;
 	case KingThreatenedInfo::straightUpThreatened:
-		if (box.x == attackedFromBox.x && box.y > attackedFromBox.y && box.y < kingBox.y) {
-			return true;
-		}
-		else {
-			return false;
-		}
-
+		return box.x == attackedFromBox.x && box.y > attackedFromBox.y && box.y < kingBox.y;
 		break;
 	case KingThreatenedInfo::straightLeftThreatened:
-		if (box.y == attackedFromBox.y && box.x > attackedFromBox.x && box.x < kingBox.x) {
-			return true;
-		}
-		else {
-			return false;
-		}
+		return box.y == attackedFromBox.y && box.x > attackedFromBox.x && box.x < kingBox.x;	
 		break;
 	case KingThreatenedInfo::straightRightThreatened:
-		if (box.y == attackedFromBox.y && box.x < attackedFromBox.x && box.x > kingBox.x) {
-			return true;
-		}
-		else {
-			return false;
-		}
+		return box.y == attackedFromBox.y && box.x < attackedFromBox.x && box.x > kingBox.x;	
 		break;
 	case KingThreatenedInfo::upLeftThreatened:
 		if (inSameReverseDiagonal(box, kingBox)) {
@@ -2479,36 +2438,19 @@ bool Board::doesBoxBlockAttack(Box box, BoardState* currentBoardState) {
 		break;
 	case KingThreatenedInfo::upRightThreatened:
 		if (inSameDiagonal(box, kingBox)) {
-			if (box.x > kingBox.x && box.x < attackedFromBox.x) {
-				return true;
-			}
-			else {
-				return false;
-			}
+			return box.x > kingBox.x && box.x < attackedFromBox.x;
 		}
 		break;
 	case KingThreatenedInfo::downLeftThreatened:
 		if (inSameDiagonal(box, kingBox)) {
-			if (box.x < kingBox.x && box.x > attackedFromBox.x) {
-				return true;
-			}
-			else {
-				return false;
-			}
+			return box.x < kingBox.x && box.x > attackedFromBox.x;
 		}
 		break;
 	case KingThreatenedInfo::downRightThreatened:
 		if (inSameReverseDiagonal(box, kingBox)) {
-			if (box.x > kingBox.x && box.x < attackedFromBox.x) {
-				return true;
-			}
-			else {
-				return false;
-			}
+			return box.x > kingBox.x && box.x < attackedFromBox.x;
 		}
-		else {
-			return false;
-		}
+		return false;
 		break;
 	default:
 		std::cout << "error in switch" << std::endl;
