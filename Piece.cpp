@@ -42,7 +42,7 @@ void Piece::loadImages() {
 	blackQueenTexture = SDL_CreateTextureFromSurface(Window::renderer, surface);
 	SDL_FreeSurface(surface);
 
-	surface = IMG_Load("images/whitequeen.png");
+	surface = IMG_Load("images/whiteQueen.png");
 	whiteQueenTexture = SDL_CreateTextureFromSurface(Window::renderer, surface);
 	SDL_FreeSurface(surface);
 
