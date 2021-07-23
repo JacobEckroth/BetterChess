@@ -1,0 +1,21 @@
+name: 'CI'
+on:
+  push:
+jobs:
+  test-building:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: jwlawson/actions-setup-cmake@v1.9
+      name: 'Setup cmake'
+      with:
+        cmake-version: '3.16.x'
+
+    - name: 'Install deps'
+      run: sudo apt install sdl2 sdl2_image sdl2-devel sdl2_image-devel
+      
+    - name: 'Run cmake'
+      run: cmake .
+
+    - name: 'Generate makefile'
+      run: make 
