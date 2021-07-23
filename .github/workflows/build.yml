@@ -1,0 +1,25 @@
+name: 'CI'
+on:
+  push:
+jobs:
+  test-building:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: jwlawson/actions-setup-cmake@v1.9
+      name: 'Setup cmake'
+      with:
+        cmake-version: '3.16.x'
+
+    - name: 'Install deps'
+      run: |
+        sudo apt-get update
+        sudo apt-get install libsdl2-dev libsdl2-2.0-0 -y
+        sudo apt-get install libjpeg-dev libwebp-dev libtiff5-dev libsdl2-image-dev libsdl2-image-2.0-0 -y
+
+      
+    - name: 'Run cmake'
+      run: cmake .
+
+    - name: 'Generate makefile'
+      run: make 
