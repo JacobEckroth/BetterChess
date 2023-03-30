@@ -51,19 +51,19 @@ void Window::handleEvents() {
 void Window::handleKeyDown(SDL_KeyboardEvent& key) {
 	
 	switch (key.keysym.scancode) {
-	case(21):
+	case SDL_SCANCODE_R:
 		game->reset();
 		break;
-	case 6:
+	case SDL_SCANCODE_C:
 		game->calculateBoardStates();
 		break;
-	case 19:
+	case SDL_SCANCODE_P:
 		game->togglePromotionOptions();
 		break;
-	case 53:
+	case SDL_SCANCODE_GRAVE: //~ on US keyboard
 		game->makeRandomMove();
 		break;
-	case 29:
+	case SDL_SCANCODE_Z:
 		game->unmakeMove();
 		break;
 	default:
